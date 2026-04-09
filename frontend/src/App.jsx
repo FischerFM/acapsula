@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Insumos from './pages/Insumos';
@@ -5,8 +6,9 @@ import Procedimentos from './pages/Procedimentos';
 import Agendamentos from './pages/Agendamentos';
 import ProjecaoSemanal from './pages/ProjecaoSemanal';
 import Historico from './pages/Historico';
+import Login from './pages/Login';
 
-function Sidebar() {
+function Sidebar({ usuario, onLogout }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -33,15 +35,31 @@ function Sidebar() {
           Historico
         </NavLink>
       </nav>
+      <div style={{ marginTop: 'auto', padding: '16px 20px', borderTop: '1px solid var(--border)', fontSize: 13 }}>
+        <div style={{ color: 'var(--text-muted)', marginBottom: 8 }}>Logado como <strong>{usuario}</strong></div>
+        <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={onLogout}>Sair</button>
+      </div>
     </aside>
   );
 }
 
 export default function App() {
+  const [usuario, setUsuario] = useState(() => localStorage.getItem('acapsula_usuario'));
+
+  function handleLogin(u) { setUsuario(u); }
+
+  function handleLogout() {
+    localStorage.removeItem('acapsula_token');
+    localStorage.removeItem('acapsula_usuario');
+    setUsuario(null);
+  }
+
+  if (!usuario) return <Login onLogin={handleLogin} />;
+
   return (
     <BrowserRouter>
       <div className="layout">
-        <Sidebar />
+        <Sidebar usuario={usuario} onLogout={handleLogout} />
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Dashboard />} />

@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -65,6 +66,23 @@ async function initDB() {
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id SERIAL PRIMARY KEY,
+      usuario TEXT NOT NULL UNIQUE,
+      senha_hash TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Cria usuário padrão se não existir
+  const { rows: users } = await pool.query('SELECT COUNT(*) as c FROM usuarios');
+  if (parseInt(users[0].c) === 0) {
+    const hash = await bcrypt.hash('acapsula123', 10);
+    await pool.query('INSERT INTO usuarios (usuario, senha_hash) VALUES ($1, $2)', ['admin', hash]);
+    console.log('[DB] Usuário padrão criado: admin / acapsula123');
+  }
 
   // Seed apenas se banco vazio
   const { rows } = await pool.query('SELECT COUNT(*) as c FROM insumos');

@@ -9,4 +9,24 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Envia token em todas as requisições
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('acapsula_token');
+  if (token) config.headers['Authorization'] = `Bearer ${token}`;
+  return config;
+});
+
+// Se receber 401, limpa sessão e recarrega para ir ao login
+api.interceptors.response.use(
+  res => res,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('acapsula_token');
+      localStorage.removeItem('acapsula_usuario');
+      window.location.href = '/';
+    }
+    return Promise.reject(err);
+  }
+);
+
 export default api;
