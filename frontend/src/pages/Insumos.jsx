@@ -144,6 +144,9 @@ export default function Insumos() {
         <h2>Insumos</h2>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost" onClick={exportarExcel}>Exportar Excel</button>
+          <button className="btn btn-ghost" onClick={() => window.open(`${API_BASE}/exportar/modelo-insumos`, '_blank')}>
+            Baixar Modelo
+          </button>
           <button className="btn btn-ghost" onClick={() => fileInputRef.current.click()} disabled={importing}>
             {importing ? 'Importando...' : 'Importar Excel'}
           </button>
