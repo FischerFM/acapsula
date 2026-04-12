@@ -52,7 +52,7 @@ router.post('/importar', upload.single('arquivo'), async (req, res) => {
 
     const { rows: procs } = await pool.query('SELECT id, nome FROM procedimentos');
     const procMap = {};
-    for (const p of procs) procMap[p.nome.toLowerCase().trim()] = p.id;
+    for (const p of procs) procMap[normKey(p.nome)] = p.id;
 
     let importados = 0;
     const erros = [];
@@ -87,7 +87,7 @@ router.post('/importar', upload.single('arquivo'), async (req, res) => {
         }
       }
 
-      const procId = procMap[procedimentoNome.toLowerCase().trim()];
+      const procId = procMap[normKey(procedimentoNome)];
       if (!procId) { erros.push(`Linha ${linha}: Procedimento "${procedimentoNome}" não encontrado.`); continue; }
 
       try {
