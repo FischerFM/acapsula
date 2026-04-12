@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API_BASE } from '../api';
+import api, { downloadFile } from '../api';
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -40,7 +40,7 @@ export default function Historico() {
     if (filtros.tipo) params.set('tipo', filtros.tipo);
     if (filtros.inicio) params.set('inicio', filtros.inicio);
     if (filtros.fim) params.set('fim', filtros.fim);
-    window.open(`${API_BASE}/exportar/movimentacoes?${params}`, '_blank');
+    downloadFile(`/exportar/movimentacoes?${params}`, `historico_${filtros.inicio}_${filtros.fim}.xlsx`);
   }
 
   const totalEntradas = movs.filter(m => m.tipo === 'Entrada').reduce((s, m) => s + m.quantidade, 0);

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api, { API_BASE } from '../api';
+import api, { downloadFile } from '../api';
 import Modal from '../components/Modal';
 
 const EMPTY_FORM = { paciente_nome: '', cpf: '', data: '', procedimento_id: '', status: 'Confirmado', observacoes: '' };
@@ -137,7 +137,7 @@ export default function Agendamentos() {
       <div className="page-header">
         <h2>Agendamentos</h2>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" onClick={() => window.open(`${API_BASE}/exportar/modelo-agendamentos`, '_blank')}>
+          <button className="btn btn-ghost" onClick={() => downloadFile('/exportar/modelo-agendamentos', 'modelo_agendamentos.xlsx')}>
             Baixar Modelo
           </button>
           <button className="btn btn-ghost" onClick={() => fileInputRef.current.click()} disabled={importing}>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import api, { API_BASE } from '../api';
+import api, { downloadFile } from '../api';
 
 function formatDate(iso) {
   const [y, m, d] = iso.split('-');
@@ -66,11 +66,11 @@ export default function ProjecaoSemanal() {
         <button className="btn btn-ghost" onClick={() => { setInicio(addDays(today(), 7)); setFim(addDays(today(), 13)); }}>
           Próxima semana
         </button>
-        <button className="btn btn-ghost" onClick={() => window.open(`${API_BASE}/exportar/projecao?inicio=${inicio}&fim=${fim}`, '_blank')}>
+        <button className="btn btn-ghost" onClick={() => downloadFile(`/exportar/projecao?inicio=${inicio}&fim=${fim}`, `projecao_${inicio}_${fim}.xlsx`)}>
           Exportar Excel
         </button>
         {dados && dados.insuficientes > 0 && (
-          <button className="btn btn-warning" onClick={() => window.open(`${API_BASE}/exportar/pedido-compra?inicio=${inicio}&fim=${fim}`, '_blank')}>
+          <button className="btn btn-warning" onClick={() => downloadFile(`/exportar/pedido-compra?inicio=${inicio}&fim=${fim}`, `pedido_compra_${inicio}_${fim}.xlsx`)}>
             Gerar Pedido de Compra
           </button>
         )}

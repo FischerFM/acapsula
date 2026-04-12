@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api, { API_BASE } from '../api';
+import api, { downloadFile } from '../api';
 import Modal from '../components/Modal';
 
 const EMPTY_FORM = { nome: '', unidade_medida: '', marca: '', estoque_fisico: '', estoque_minimo: '' };
@@ -132,7 +132,7 @@ export default function Insumos() {
   }
 
   function exportarExcel() {
-    window.open(`${API_BASE}/exportar/insumos`, '_blank');
+    downloadFile('/exportar/insumos', 'insumos.xlsx');
   }
 
   const statusLabel = { ok: 'OK', atencao: 'Atencao', critico: 'Critico' };
@@ -144,7 +144,7 @@ export default function Insumos() {
         <h2>Insumos</h2>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost" onClick={exportarExcel}>Exportar Excel</button>
-          <button className="btn btn-ghost" onClick={() => window.open(`${API_BASE}/exportar/modelo-insumos`, '_blank')}>
+          <button className="btn btn-ghost" onClick={() => downloadFile('/exportar/modelo-insumos', 'modelo_insumos.xlsx')}>
             Baixar Modelo
           </button>
           <button className="btn btn-ghost" onClick={() => fileInputRef.current.click()} disabled={importing}>

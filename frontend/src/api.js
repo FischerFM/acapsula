@@ -29,4 +29,19 @@ api.interceptors.response.use(
   }
 );
 
+// Download autenticado de arquivo Excel
+export async function downloadFile(path, filename) {
+  const token = localStorage.getItem('acapsula_token');
+  const res = await api.get(path, {
+    responseType: 'blob',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const url = URL.createObjectURL(res.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default api;
