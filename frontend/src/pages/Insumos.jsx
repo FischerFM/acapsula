@@ -284,7 +284,16 @@ export default function Insumos() {
       {/* Modal: histórico do insumo */}
       {historicoModal && historicoInsumo && (
         <Modal title={`Historico — ${historicoInsumo.nome}`} onClose={() => setHistoricoModal(false)} size="lg"
-          footer={<button className="btn btn-primary" onClick={() => setHistoricoModal(false)}>Fechar</button>}>
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <button className="btn btn-danger btn-sm" onClick={async () => {
+                if (!window.confirm(`Apagar todo o histórico de "${historicoInsumo.nome}"?\n\nIsso permite excluir o insumo depois, mas os registros serão perdidos permanentemente.`)) return;
+                await api.delete(`/movimentacoes/insumo/${historicoInsumo.id}`);
+                setHistoricoModal(false);
+              }}>Apagar Histórico</button>
+              <button className="btn btn-primary" onClick={() => setHistoricoModal(false)}>Fechar</button>
+            </div>
+          }>
           {loadingHistorico ? <div className="loading">Carregando...</div> : historico.length === 0 ? (
             <div className="empty-state">Nenhuma movimentação registrada ainda.</div>
           ) : (

@@ -65,4 +65,13 @@ router.post('/', async (req, res) => {
   } finally { client.release(); }
 });
 
+router.delete('/insumo/:id', async (req, res) => {
+  try {
+    const { rows: ex } = await pool.query('SELECT id FROM insumos WHERE id=$1', [req.params.id]);
+    if (!ex.length) return res.status(404).json({ error: 'Insumo não encontrado.' });
+    const { rowCount } = await pool.query('DELETE FROM movimentacoes_estoque WHERE insumo_id=$1', [req.params.id]);
+    res.json({ success: true, removidas: rowCount });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 module.exports = router;
