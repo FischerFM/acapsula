@@ -65,12 +65,19 @@ export default function Dashboard() {
   // Procedimentos mais realizados
   const procData = graficos?.topProcedimentos || [];
 
-  // Estoque atual (barras)
-  const estoqueData = (graficos?.estoqueAtual || []).map(i => ({
-    name: i.nome.length > 18 ? i.nome.slice(0, 16) + '…' : i.nome,
-    Atual: i.estoque_fisico,
-    Minimo: i.estoque_minimo,
-  }));
+  // Estoque atual — top 20 mais críticos (menor saldo relativo ao mínimo)
+  const estoqueData = (graficos?.estoqueAtual || [])
+    .sort((a, b) => {
+      const rA = a.estoque_minimo > 0 ? a.estoque_fisico / a.estoque_minimo : a.estoque_fisico;
+      const rB = b.estoque_minimo > 0 ? b.estoque_fisico / b.estoque_minimo : b.estoque_fisico;
+      return rA - rB;
+    })
+    .slice(0, 20)
+    .map(i => ({
+      name: i.nome.length > 16 ? i.nome.slice(0, 14) + '…' : i.nome,
+      Atual: i.estoque_fisico,
+      Minimo: i.estoque_minimo,
+    }));
 
   return (
     <div>
@@ -195,16 +202,17 @@ export default function Dashboard() {
 
           {/* Estoque atual */}
           <div className="table-card" style={{ padding: 20, gridColumn: '1 / -1' }}>
-            <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Estoque Atual vs Mínimo (por insumo)
+            <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Estoque Atual vs Mínimo
             </h3>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>20 insumos com menor saldo relativo ao mínimo</p>
             {estoqueData.length === 0 ? (
               <div className="empty-state" style={{ padding: 20 }}>Nenhum insumo cadastrado.</div>
             ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={estoqueData} margin={{ top: 0, right: 10, left: -10, bottom: 40 }}>
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={estoqueData} margin={{ top: 0, right: 10, left: -10, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" interval={0} />
+                  <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-35} textAnchor="end" interval={0} />
                   <YAxis tick={{ fontSize: 12 }} />
                   <Tooltip />
                   <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
@@ -220,50 +228,45 @@ export default function Dashboard() {
       {/* Projeção dia a dia */}
       <div className="table-card">
         <div className="table-card-header">
-          <h3>Projecao de Estoque por Dia</h3>
+          <h3>Projeção de Estoque por Dia</h3>
           <span className="text-muted" style={{ fontSize: 12 }}>Baseado nos agendamentos confirmados futuros</span>
         </div>
         {dias.length === 0 ? (
           <div className="empty-state">Nenhum agendamento confirmado futuro encontrado.</div>
         ) : (
-          <div className="proj-table-wrap">
-            <table className="proj-table">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th>Pacientes</th>
-                  {insumos.map(ins => (
-                    <th key={ins.id} className="insumo-header">
-                      {ins.nome}
-                      <div style={{ fontWeight: 400, fontSize: 11, marginTop: 2 }}>Atual: {ins.estoque_fisico} {ins.unidade_medida}</div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {dias.map(dia => (
-                  <tr key={dia.data}>
-                    <td><strong>{formatDate(dia.data)}</strong></td>
-                    <td>{dia.agendamentos.map((ag, i) => <div key={i} style={{ fontSize: 12 }}>{ag.paciente} <span className="text-muted">({ag.procedimento})</span></div>)}</td>
-                    {insumos.map(ins => {
-                      const cell = dia.estoque[ins.id];
-                      const isCritico = cell.saldo < 0;
-                      const hasConsumo = cell.consumo > 0;
-                      return (
-                        <td key={ins.id} className={`proj-cell ${isCritico ? 'critico' : hasConsumo ? 'consumo' : 'ok'}`}>
-                          {hasConsumo ? (
-                            <>
-                              <div className="proj-consumo">-{cell.consumo} {ins.unidade_medida}</div>
-                              <div className="proj-saldo">{isCritico ? <span style={{ color: 'var(--danger)' }}>Saldo: {cell.saldo}</span> : <span>Saldo: {cell.saldo}</span>}</div>
-                            </>
-                          ) : <span className="text-muted">—</span>}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '12px 16px' }}>
+            {dias.map(dia => {
+              const consumidos = insumos.filter(ins => dia.estoque[ins.id]?.consumo > 0);
+              return (
+                <div key={dia.data} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
+                    <strong style={{ fontSize: 15, minWidth: 90 }}>{formatDate(dia.data)}</strong>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {dia.agendamentos.map((ag, i) => (
+                        <span key={i} style={{ fontSize: 12, background: '#f0f4ff', borderRadius: 4, padding: '2px 8px', color: '#3b5bdb' }}>
+                          {ag.paciente} <span style={{ opacity: 0.7 }}>({ag.procedimento})</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  {consumidos.length === 0 ? (
+                    <span className="text-muted" style={{ fontSize: 12 }}>Nenhum insumo consumido.</span>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {consumidos.map(ins => {
+                        const cell = dia.estoque[ins.id];
+                        const critico = cell.saldo < 0;
+                        return (
+                          <div key={ins.id} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, background: critico ? '#fff5f5' : '#f0faf4', border: `1px solid ${critico ? '#feb2b2' : '#9ae6b4'}`, color: critico ? '#c53030' : '#276749' }}>
+                            <strong>{ins.nome}</strong>: −{cell.consumo} {ins.unidade_medida} → saldo {cell.saldo}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
