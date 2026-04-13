@@ -189,7 +189,7 @@ export default function Agendamentos() {
               <tr>
                 <SortTh col="data" sort={sort} onSort={toggleSort}>Data</SortTh>
                 <SortTh col="paciente_nome" sort={sort} onSort={toggleSort}>Paciente</SortTh>
-                <SortTh col="procedimento_nome" sort={sort} onSort={toggleSort}>Procedimento</SortTh>
+                <SortTh col="procedimento_nome" sort={sort} onSort={toggleSort}>Protocolo</SortTh>
                 <th>CPF</th>
                 <SortTh col="status" sort={sort} onSort={toggleSort}>Status</SortTh>
                 <th>Observacoes</th>
@@ -249,9 +249,9 @@ export default function Agendamentos() {
               </select>
             </div>
           </div>
-          <div className="form-group"><label>Procedimento</label>
+          <div className="form-group"><label>Protocolo</label>
             <select value={form.procedimento_id} onChange={e => setForm(f => ({ ...f, procedimento_id: e.target.value }))}>
-              <option value="">Selecione o procedimento...</option>
+              <option value="">Selecione o protocolo...</option>
               {procedimentos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
           </div>

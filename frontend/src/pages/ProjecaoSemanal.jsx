@@ -107,7 +107,7 @@ export default function ProjecaoSemanal() {
           {/* Alerta de insuficiência */}
           {dados.insuficientes > 0 && (
             <div style={{ background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 14, color: '#c53030' }}>
-              <strong>Atenção:</strong> {dados.insuficientes} insumo(s) não têm estoque suficiente para cobrir todos os procedimentos do período. Considere repor o estoque antes dos atendimentos.
+              <strong>Atenção:</strong> {dados.insuficientes} insumo(s) não têm estoque suficiente para cobrir todos os protocolos do período. Considere repor o estoque antes dos atendimentos.
             </div>
           )}
 
@@ -154,7 +154,7 @@ export default function ProjecaoSemanal() {
                 <tr>
                   <th>Data</th>
                   <th>Paciente</th>
-                  <th>Procedimento</th>
+                  <th>Protocolo</th>
                 </tr>
               </thead>
               <tbody>

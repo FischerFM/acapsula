@@ -23,7 +23,7 @@ function Sidebar({ usuario, onLogout }) {
           Insumos
         </NavLink>
         <NavLink to="/procedimentos" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
-          Procedimentos
+          Protocolos
         </NavLink>
         <NavLink to="/agendamentos" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
           Agendamentos

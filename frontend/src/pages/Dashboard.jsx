@@ -177,10 +177,10 @@ export default function Dashboard() {
           {/* Top procedimentos */}
           <div className="table-card" style={{ padding: 20 }}>
             <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 16, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Procedimentos Mais Realizados (90 dias)
+              Protocolos Mais Realizados (90 dias)
             </h3>
             {procData.length === 0 ? (
-              <div className="empty-state" style={{ padding: 20 }}>Nenhum procedimento realizado ainda.</div>
+              <div className="empty-state" style={{ padding: 20 }}>Nenhum protocolo realizado ainda.</div>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>

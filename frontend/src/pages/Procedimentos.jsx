@@ -84,7 +84,7 @@ export default function Procedimentos() {
   }
 
   async function handleDelete(proc) {
-    if (!window.confirm(`Excluir o procedimento "${proc.nome}"?`)) return;
+    if (!window.confirm(`Excluir o protocolo "${proc.nome}"?`)) return;
     try {
       await api.delete(`/procedimentos/${proc.id}`);
       loadProcs();
@@ -165,34 +165,34 @@ export default function Procedimentos() {
   return (
     <div>
       <div className="page-header">
-        <h2>Procedimentos</h2>
+        <h2>Protocolos</h2>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-ghost" onClick={() => downloadFile('/exportar/modelo-procedimentos', 'modelo_procedimentos.xlsx')}>Baixar Modelo</button>
           <button className="btn btn-ghost" onClick={() => fileInputRef.current.click()} disabled={importing}>
             {importing ? 'Importando...' : 'Importar Excel'}
           </button>
           <input type="file" ref={fileInputRef} accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImportFile} />
-          <button className="btn btn-primary" onClick={openCreate}>+ Novo Procedimento</button>
+          <button className="btn btn-primary" onClick={openCreate}>+ Novo Protocolo</button>
         </div>
       </div>
 
       <div className="filter-bar" style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="Buscar por nome ou descrição..."
+          placeholder="Buscar por nome ou descrição do protocolo..."
           value={busca}
           onChange={e => { setBusca(e.target.value); setPagina(1); }}
           style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 14, minWidth: 220 }}
         />
         {busca && <button className="btn btn-ghost btn-sm" onClick={() => { setBusca(''); setPagina(1); }}>Limpar</button>}
-        <span className="text-muted" style={{ fontSize: 13, marginLeft: 'auto' }}>{totalFiltrado} procedimento(s)</span>
+        <span className="text-muted" style={{ fontSize: 13, marginLeft: 'auto' }}>{totalFiltrado} protocolo(s)</span>
       </div>
 
       <div className="table-card">
         {loading ? (
           <div className="loading">Carregando...</div>
         ) : procedimentos.length === 0 ? (
-          <div className="empty-state">Nenhum procedimento cadastrado.</div>
+          <div className="empty-state">Nenhum protocolo cadastrado.</div>
         ) : (
           <table>
             <thead>
@@ -233,7 +233,7 @@ export default function Procedimentos() {
       {/* Modal: criar/editar procedimento */}
       {modal === 'form' && (
         <Modal
-          title={editId ? 'Editar Procedimento' : 'Novo Procedimento'}
+          title={editId ? 'Editar Protocolo' : 'Novo Protocolo'}
           onClose={closeModal}
           footer={
             <>
@@ -250,7 +250,7 @@ export default function Procedimentos() {
               type="text"
               value={form.nome}
               onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-              placeholder="Ex: Aplicação de Insulina"
+              placeholder="Ex: Aplicação de Insulina Glargina"
             />
           </div>
           <div className="form-group">
