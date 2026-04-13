@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import api, { downloadFile } from '../api';
 import Modal from '../components/Modal';
+import Pagination from '../components/Pagination';
+
+const POR_PAGINA = 20;
 
 const EMPTY_FORM = { nome: '', unidade_medida: '', marca: '', estoque_fisico: '', estoque_minimo: '' };
 const EMPTY_ENTRADA = { quantidade: '', fornecedor: '', data: '', observacoes: '', lote: '', data_validade: '' };
@@ -62,6 +65,8 @@ export default function Insumos() {
   const [importResult, setImportResult] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
+  const [busca, setBusca] = useState('');
+  const [pagina, setPagina] = useState(1);
 
   const load = () => api.get('/insumos').then(r => setInsumos(r.data)).finally(() => setLoading(false));
   useEffect(() => { load(); }, []);
@@ -136,7 +141,14 @@ export default function Insumos() {
   }
 
   const statusLabel = { ok: 'OK', atencao: 'Atencao', critico: 'Critico' };
-  const sorted = applySort(insumos, sort);
+  let filtrados = insumos;
+  if (busca.trim()) filtrados = filtrados.filter(i =>
+    i.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    (i.marca || '').toLowerCase().includes(busca.toLowerCase())
+  );
+  const sorted = applySort(filtrados, sort);
+  const totalFiltrado = sorted.length;
+  const listaPagina = sorted.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   return (
     <div>
@@ -155,6 +167,18 @@ export default function Insumos() {
         </div>
       </div>
 
+      <div className="filter-bar" style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="Buscar por nome ou marca..."
+          value={busca}
+          onChange={e => { setBusca(e.target.value); setPagina(1); }}
+          style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 14, minWidth: 220 }}
+        />
+        {busca && <button className="btn btn-ghost btn-sm" onClick={() => { setBusca(''); setPagina(1); }}>Limpar</button>}
+        <span className="text-muted" style={{ fontSize: 13, marginLeft: 'auto' }}>{totalFiltrado} insumo(s)</span>
+      </div>
+
       <div className="table-card">
         {loading ? <div className="loading">Carregando...</div> : insumos.length === 0 ? <div className="empty-state">Nenhum insumo cadastrado.</div> : (
           <table>
@@ -170,7 +194,7 @@ export default function Insumos() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map(ins => {
+              {listaPagina.map(ins => {
                 const st = estoqueStatus(ins);
                 return (
                   <tr key={ins.id}>
@@ -194,6 +218,7 @@ export default function Insumos() {
             </tbody>
           </table>
         )}
+        <Pagination pagina={pagina} total={totalFiltrado} porPagina={POR_PAGINA} onChange={p => { setPagina(p); window.scrollTo(0,0); }} />
       </div>
 
       {/* Modal: criar/editar */}

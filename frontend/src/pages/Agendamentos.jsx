@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import api, { downloadFile } from '../api';
 import Modal from '../components/Modal';
+import Pagination from '../components/Pagination';
+
+const POR_PAGINA = 20;
 
 const EMPTY_FORM = { paciente_nome: '', cpf: '', data: '', procedimento_id: '', status: 'Confirmado', observacoes: '' };
 
@@ -56,6 +59,7 @@ export default function Agendamentos() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+  const [pagina, setPagina] = useState(1);
 
   const load = () => api.get('/agendamentos').then(r => setAgendamentos(r.data));
   const loadProcs = () => api.get('/procedimentos').then(r => setProcedimentos(r.data));
@@ -131,6 +135,8 @@ export default function Agendamentos() {
     (a.cpf || '').replace(/\D/g, '').includes(busca.replace(/\D/g, ''))
   );
   lista = applySort(lista, sort);
+  const totalFiltrado = lista.length;
+  const listaPagina = lista.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
 
   return (
     <div>
@@ -163,12 +169,12 @@ export default function Agendamentos() {
           <option value="Cancelado">Cancelado</option>
         </select>
         {(busca || filtroStatus) && (
-          <button className="btn btn-ghost btn-sm" onClick={() => { setBusca(''); setFiltroStatus(''); }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => { setBusca(''); setFiltroStatus(''); setPagina(1); }}>
             Limpar filtros
           </button>
         )}
         <span className="text-muted" style={{ fontSize: 13, marginLeft: 'auto' }}>
-          {lista.length} agendamento(s)
+          {totalFiltrado} agendamento(s)
         </span>
       </div>
 
@@ -191,7 +197,7 @@ export default function Agendamentos() {
               </tr>
             </thead>
             <tbody>
-              {lista.map(ag => (
+              {listaPagina.map(ag => (
                 <tr key={ag.id}>
                   <td><strong>{formatDate(ag.data)}</strong></td>
                   <td>{ag.paciente_nome}</td>
@@ -216,6 +222,7 @@ export default function Agendamentos() {
             </tbody>
           </table>
         )}
+        <Pagination pagina={pagina} total={totalFiltrado} porPagina={POR_PAGINA} onChange={p => { setPagina(p); window.scrollTo(0,0); }} />
       </div>
 
       {/* Modal: criar/editar agendamento */}

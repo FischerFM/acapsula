@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../api';
 import Modal from '../components/Modal';
+import Pagination from '../components/Pagination';
+
+const POR_PAGINA = 20;
 
 const EMPTY_FORM = { nome: '', descricao: '' };
 
@@ -17,6 +20,8 @@ export default function Procedimentos() {
   const [newItem, setNewItem] = useState({ insumo_id: '', quantidade: '' });
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+  const [busca, setBusca] = useState('');
+  const [pagina, setPagina] = useState(1);
 
   const loadProcs = () => api.get('/procedimentos').then(r => setProcedimentos(r.data));
   const loadInsumos = () => api.get('/insumos').then(r => setInsumos(r.data));
@@ -131,11 +136,31 @@ export default function Procedimentos() {
 
   const availableInsumos = insumos.filter(i => !bom.find(b => b.insumo_id === i.id));
 
+  let filtrados = procedimentos;
+  if (busca.trim()) filtrados = filtrados.filter(p =>
+    p.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    (p.descricao || '').toLowerCase().includes(busca.toLowerCase())
+  );
+  const totalFiltrado = filtrados.length;
+  const listaPagina = filtrados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+
   return (
     <div>
       <div className="page-header">
         <h2>Procedimentos</h2>
         <button className="btn btn-primary" onClick={openCreate}>+ Novo Procedimento</button>
+      </div>
+
+      <div className="filter-bar" style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="Buscar por nome ou descrição..."
+          value={busca}
+          onChange={e => { setBusca(e.target.value); setPagina(1); }}
+          style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 14, minWidth: 220 }}
+        />
+        {busca && <button className="btn btn-ghost btn-sm" onClick={() => { setBusca(''); setPagina(1); }}>Limpar</button>}
+        <span className="text-muted" style={{ fontSize: 13, marginLeft: 'auto' }}>{totalFiltrado} procedimento(s)</span>
       </div>
 
       <div className="table-card">
@@ -154,7 +179,7 @@ export default function Procedimentos() {
               </tr>
             </thead>
             <tbody>
-              {procedimentos.map(proc => (
+              {listaPagina.map(proc => (
                 <tr key={proc.id}>
                   <td><strong>{proc.nome}</strong></td>
                   <td className="text-muted">{proc.descricao || '—'}</td>
@@ -177,6 +202,7 @@ export default function Procedimentos() {
             </tbody>
           </table>
         )}
+        <Pagination pagina={pagina} total={totalFiltrado} porPagina={POR_PAGINA} onChange={p => { setPagina(p); window.scrollTo(0,0); }} />
       </div>
 
       {/* Modal: criar/editar procedimento */}
