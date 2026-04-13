@@ -140,6 +140,11 @@ router.get('/insumos', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+router.get('/modelo-procedimentos', (req, res) => {
+  const data = [{ 'Nome': 'Aplicação de Insulina', 'Descricao': 'Procedimento com seringa e insulina glargina' }];
+  sendExcel(res, [{ name: 'Procedimentos', data }], 'modelo_procedimentos.xlsx');
+});
+
 router.get('/modelo-insumos', (req, res) => {
   const data = [{ 'Item': 'Insulina Glargina', 'Unidade': 'frasco', 'Marca': 'Novo Nordisk', 'Saldo Atual': 10 }];
   sendExcel(res, [{ name: 'Insumos', data }], 'modelo_insumos.xlsx');

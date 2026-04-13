@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import api from '../api';
+import { useState, useEffect, useRef } from 'react';
+import api, { downloadFile } from '../api';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
 
@@ -22,6 +22,9 @@ export default function Procedimentos() {
   const [formError, setFormError] = useState('');
   const [busca, setBusca] = useState('');
   const [pagina, setPagina] = useState(1);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const fileInputRef = useRef(null);
 
   const loadProcs = () => api.get('/procedimentos').then(r => setProcedimentos(r.data));
   const loadInsumos = () => api.get('/insumos').then(r => setInsumos(r.data));
@@ -134,6 +137,21 @@ export default function Procedimentos() {
     }
   }
 
+  async function handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', file);
+      const r = await api.post('/procedimentos/importar', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setImportResult(r.data); loadProcs();
+    } catch (e) {
+      setImportResult({ criados: 0, atualizados: 0, erros: [e.response?.data?.error || 'Erro ao importar.'], total: 0 });
+    } finally { setImporting(false); }
+  }
+
   const availableInsumos = insumos.filter(i => !bom.find(b => b.insumo_id === i.id));
 
   let filtrados = procedimentos;
@@ -148,7 +166,14 @@ export default function Procedimentos() {
     <div>
       <div className="page-header">
         <h2>Procedimentos</h2>
-        <button className="btn btn-primary" onClick={openCreate}>+ Novo Procedimento</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-ghost" onClick={() => downloadFile('/exportar/modelo-procedimentos', 'modelo_procedimentos.xlsx')}>Baixar Modelo</button>
+          <button className="btn btn-ghost" onClick={() => fileInputRef.current.click()} disabled={importing}>
+            {importing ? 'Importando...' : 'Importar Excel'}
+          </button>
+          <input type="file" ref={fileInputRef} accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImportFile} />
+          <button className="btn btn-primary" onClick={openCreate}>+ Novo Procedimento</button>
+        </div>
       </div>
 
       <div className="filter-bar" style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16 }}>
@@ -320,6 +345,25 @@ export default function Procedimentos() {
           </div>
 
           {formError && <div className="error-msg" style={{ marginTop: 8 }}>{formError}</div>}
+        </Modal>
+      )}
+      {importResult && (
+        <Modal title="Resultado da Importação" onClose={() => setImportResult(null)}
+          footer={<button className="btn btn-primary" onClick={() => setImportResult(null)}>OK</button>}>
+          <p style={{ fontSize: 15 }}>
+            <strong>{importResult.criados}</strong> criado(s) e <strong>{importResult.atualizados}</strong> atualizado(s) de <strong>{importResult.total}</strong> linha(s).
+          </p>
+          {importResult.erros?.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--danger, #e53e3e)', marginBottom: 8 }}>{importResult.erros.length} erro(s):</p>
+              <ul style={{ fontSize: 13, color: 'var(--danger, #e53e3e)', paddingLeft: 20, lineHeight: 1.8 }}>
+                {importResult.erros.map((err, i) => <li key={i}>{err}</li>)}
+              </ul>
+            </div>
+          )}
+          <p className="text-muted" style={{ fontSize: 12, marginTop: 12 }}>
+            Formato esperado: colunas <strong>Nome</strong> e <strong>Descricao</strong>
+          </p>
         </Modal>
       )}
     </div>
