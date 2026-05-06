@@ -65,6 +65,14 @@ router.get('/projecao', async (req, res) => {
       projecao.push({ data: dia, agendamentos: agsPorDia[dia], estoque: snapshot });
     }
 
+    // Insumos que serão usados em algum agendamento futuro
+    const insumosComAgendamento = new Set();
+    for (const dia of Object.values(consumoPorDia)) {
+      for (const insumoId of Object.keys(dia)) {
+        if (dia[insumoId] > 0) insumosComAgendamento.add(parseInt(insumoId));
+      }
+    }
+
     const alertasPorInsumo = new Set(), alertas = [];
     for (const dia of projecao) {
       for (const ins of insumos) {
@@ -75,8 +83,9 @@ router.get('/projecao', async (req, res) => {
         }
       }
     }
+    // Atenção: só para insumos que serão usados em agendamentos futuros
     for (const ins of insumos) {
-      if (!alertasPorInsumo.has(ins.id) && ins.estoque_minimo > 0 && ins.estoque_fisico <= ins.estoque_minimo) {
+      if (!alertasPorInsumo.has(ins.id) && insumosComAgendamento.has(ins.id) && ins.estoque_minimo > 0 && ins.estoque_fisico <= ins.estoque_minimo) {
         alertas.push({ tipo: 'atencao', insumo_id: ins.id, insumo: ins.nome, unidade: ins.unidade_medida, mensagem: `Estoque atual (${ins.estoque_fisico} ${ins.unidade_medida}) ≤ mínimo (${ins.estoque_minimo})` });
         alertasPorInsumo.add(ins.id);
       }
