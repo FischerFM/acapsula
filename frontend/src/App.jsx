@@ -6,6 +6,7 @@ import Procedimentos from './pages/Procedimentos';
 import Agendamentos from './pages/Agendamentos';
 import ProjecaoSemanal from './pages/ProjecaoSemanal';
 import Historico from './pages/Historico';
+import Validades from './pages/Validades';
 import Login from './pages/Login';
 
 function Sidebar({ usuario, onLogout }) {
@@ -33,6 +34,9 @@ function Sidebar({ usuario, onLogout }) {
         </NavLink>
         <NavLink to="/historico" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
           Historico
+        </NavLink>
+        <NavLink to="/validades" className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
+          Validades
         </NavLink>
       </nav>
       <div style={{ marginTop: 'auto', padding: '16px 20px', borderTop: '1px solid var(--border)', fontSize: 13 }}>
@@ -68,6 +72,7 @@ export default function App() {
             <Route path="/agendamentos" element={<Agendamentos />} />
             <Route path="/projecao" element={<ProjecaoSemanal />} />
             <Route path="/historico" element={<Historico />} />
+            <Route path="/validades" element={<Validades />} />
           </Routes>
         </main>
       </div>

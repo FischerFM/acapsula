@@ -20,6 +20,7 @@ app.use('/api/agendamentos', require('./routes/agendamentos'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/movimentacoes', require('./routes/movimentacoes'));
 app.use('/api/exportar', require('./routes/exportar'));
+app.use('/api/validades', require('./routes/validades'));
 
 const PORT = process.env.PORT || 3001;
 

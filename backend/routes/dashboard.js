@@ -98,7 +98,8 @@ router.get('/projecao', async (req, res) => {
 router.get('/validades', async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const em30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+    const dias = parseInt(req.query.dias) || 30;
+    const em30 = new Date(Date.now() + dias * 86400000).toISOString().split('T')[0];
     const { rows: lotes } = await pool.query(`
       SELECT m.id, m.lote, m.data_validade, m.quantidade, m.data as data_entrada,
              i.nome as insumo_nome, i.unidade_medida, i.marca

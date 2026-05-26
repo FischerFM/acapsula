@@ -7,7 +7,13 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM insumos ORDER BY nome');
+    const { rows } = await pool.query(`
+      SELECT i.*,
+        (SELECT MIN(m.data_validade) FROM movimentacoes_estoque m
+         WHERE m.insumo_id = i.id AND m.data_validade != '' AND m.data_validade IS NOT NULL
+         AND m.data_validade >= CURRENT_DATE::text) as proxima_validade
+      FROM insumos i ORDER BY i.nome
+    `);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

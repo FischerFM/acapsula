@@ -189,6 +189,7 @@ export default function Insumos() {
                 <SortTh col="unidade_medida" sort={sort} onSort={toggleSort}>Unidade</SortTh>
                 <SortTh col="estoque_fisico" sort={sort} onSort={toggleSort}>Estoque Fisico</SortTh>
                 <SortTh col="estoque_minimo" sort={sort} onSort={toggleSort}>Estoque Minimo</SortTh>
+                <SortTh col="proxima_validade" sort={sort} onSort={toggleSort}>Prox. Validade</SortTh>
                 <th>Status</th>
                 <th>Acoes</th>
               </tr>
@@ -203,6 +204,14 @@ export default function Insumos() {
                     <td className="text-muted">{ins.unidade_medida}</td>
                     <td><strong style={{ fontSize: 15 }}>{ins.estoque_fisico}</strong> <span className="text-muted">{ins.unidade_medida}</span></td>
                     <td className="text-muted">{ins.estoque_minimo || '—'}</td>
+                    <td style={{ fontSize: 12 }}>
+                      {ins.proxima_validade ? (() => {
+                        const hoje = new Date().toISOString().split('T')[0];
+                        const em30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+                        const cor = ins.proxima_validade < hoje ? 'var(--danger,#e53e3e)' : ins.proxima_validade <= em30 ? '#d97706' : 'inherit';
+                        return <span style={{ color: cor, fontWeight: ins.proxima_validade <= em30 ? 600 : 400 }}>{formatDate(ins.proxima_validade)}</span>;
+                      })() : <span className="text-muted">—</span>}
+                    </td>
                     <td><span className={`badge badge-${st}`}>{statusLabel[st]}</span></td>
                     <td>
                       <div className="btn-group">
