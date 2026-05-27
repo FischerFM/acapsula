@@ -322,14 +322,28 @@ export default function Agendamentos() {
           </div>
           <div className="form-group">
             <label>Protocolos <span className="text-muted" style={{ fontWeight: 400, fontSize: 12 }}>— selecione um ou mais</span></label>
-            <div style={{ border: '1px solid var(--border)', borderRadius: 6, maxHeight: 240, overflowY: 'auto', padding: '4px 0' }}>
-              {procedimentos.map(p => (
-                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', cursor: 'pointer', background: multiForm.protocolos.includes(p.id) ? '#f0f4ff' : 'transparent' }}>
-                  <input type="checkbox" checked={multiForm.protocolos.includes(p.id)} onChange={() => toggleProtocolo(p.id)} />
-                  <span style={{ fontSize: 14 }}>{p.nome}</span>
-                </label>
-              ))}
+            <input
+              type="text"
+              placeholder="Buscar protocolo..."
+              value={multiForm.buscaProtocolo || ''}
+              onChange={e => setMultiForm(f => ({ ...f, buscaProtocolo: e.target.value }))}
+              style={{ marginBottom: 6, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 13, width: '100%' }}
+            />
+            <div style={{ border: '1px solid var(--border)', borderRadius: 6, maxHeight: 220, overflowY: 'auto', padding: '4px 0' }}>
+              {procedimentos
+                .filter(p => !multiForm.buscaProtocolo || p.nome.toLowerCase().includes(multiForm.buscaProtocolo.toLowerCase()))
+                .map(p => (
+                  <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', cursor: 'pointer', background: multiForm.protocolos.includes(p.id) ? '#f0f4ff' : 'transparent' }}>
+                    <input type="checkbox" checked={multiForm.protocolos.includes(p.id)} onChange={() => toggleProtocolo(p.id)} />
+                    <span style={{ fontSize: 14 }}>{p.nome}</span>
+                  </label>
+                ))}
             </div>
+            {multiForm.protocolos.length > 0 && (
+              <div style={{ marginTop: 8, fontSize: 12, color: '#3b5bdb' }}>
+                {multiForm.protocolos.length} protocolo(s) selecionado(s)
+              </div>
+            )}
           </div>
           {multiError && <div className="error-msg">{multiError}</div>}
         </Modal>
