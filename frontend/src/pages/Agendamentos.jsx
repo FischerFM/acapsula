@@ -61,6 +61,12 @@ export default function Agendamentos() {
   const fileInputRef = useRef(null);
   const [pagina, setPagina] = useState(1);
 
+  const EMPTY_MULTI = { paciente_nome: '', cpf: '', data: '', observacoes: '', protocolos: [] };
+  const [multiModal, setMultiModal] = useState(false);
+  const [multiForm, setMultiForm] = useState(EMPTY_MULTI);
+  const [multiError, setMultiError] = useState('');
+  const [savingMulti, setSavingMulti] = useState(false);
+
   const load = () => api.get('/agendamentos').then(r => setAgendamentos(r.data));
   const loadProcs = () => api.get('/procedimentos').then(r => setProcedimentos(r.data));
 
@@ -112,6 +118,35 @@ export default function Agendamentos() {
     catch (e) { alert(e.response?.data?.error || 'Erro ao excluir.'); }
   }
 
+  function toggleProtocolo(id) {
+    setMultiForm(f => ({
+      ...f,
+      protocolos: f.protocolos.includes(id) ? f.protocolos.filter(p => p !== id) : [...f.protocolos, id],
+    }));
+  }
+
+  async function handleSaveMulti() {
+    if (!multiForm.paciente_nome.trim() || !multiForm.data) { setMultiError('Paciente e data são obrigatórios.'); return; }
+    if (multiForm.protocolos.length === 0) { setMultiError('Selecione ao menos um protocolo.'); return; }
+    setSavingMulti(true); setMultiError('');
+    try {
+      for (const proc_id of multiForm.protocolos) {
+        await api.post('/agendamentos', {
+          paciente_nome: multiForm.paciente_nome.trim(),
+          cpf: multiForm.cpf,
+          data: multiForm.data,
+          procedimento_id: proc_id,
+          status: 'Confirmado',
+          observacoes: multiForm.observacoes,
+        });
+      }
+      setMultiModal(false);
+      setMultiForm(EMPTY_MULTI);
+      load();
+    } catch (e) { setMultiError(e.response?.data?.error || 'Erro ao salvar.'); }
+    finally { setSavingMulti(false); }
+  }
+
   async function handleImportFile(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -150,6 +185,9 @@ export default function Agendamentos() {
             {importing ? 'Importando...' : 'Importar Excel'}
           </button>
           <input type="file" ref={fileInputRef} accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImportFile} />
+          <button className="btn btn-ghost" onClick={() => { setMultiForm({ ...EMPTY_MULTI, data: new Date().toISOString().split('T')[0] }); setMultiError(''); setMultiModal(true); }}>
+            + Múltiplos Protocolos
+          </button>
           <button className="btn btn-primary" onClick={openCreate}>+ Novo Agendamento</button>
         </div>
       </div>
@@ -259,6 +297,41 @@ export default function Agendamentos() {
             <textarea value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} placeholder="Informacoes adicionais..." />
           </div>
           {formError && <div className="error-msg">{formError}</div>}
+        </Modal>
+      )}
+
+      {/* Modal: múltiplos protocolos */}
+      {multiModal && (
+        <Modal title="Agendar Múltiplos Protocolos" onClose={() => setMultiModal(false)}
+          footer={<><button className="btn btn-ghost" onClick={() => setMultiModal(false)}>Cancelar</button><button className="btn btn-primary" onClick={handleSaveMulti} disabled={savingMulti}>{savingMulti ? 'Salvando...' : `Salvar ${multiForm.protocolos.length > 0 ? `(${multiForm.protocolos.length})` : ''}`}</button></>}>
+          <div className="form-row">
+            <div className="form-group"><label>Nome do Paciente</label>
+              <input type="text" value={multiForm.paciente_nome} onChange={e => setMultiForm(f => ({ ...f, paciente_nome: e.target.value }))} placeholder="Ex: Maria Silva" autoFocus />
+            </div>
+            <div className="form-group"><label>CPF (opcional)</label>
+              <input type="text" value={multiForm.cpf} onChange={e => setMultiForm(f => ({ ...f, cpf: formatCPF(e.target.value) }))} placeholder="000.000.000-00" maxLength={14} />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group"><label>Data</label>
+              <input type="date" value={multiForm.data} onChange={e => setMultiForm(f => ({ ...f, data: e.target.value }))} />
+            </div>
+            <div className="form-group"><label>Observações (opcional)</label>
+              <input type="text" value={multiForm.observacoes} onChange={e => setMultiForm(f => ({ ...f, observacoes: e.target.value }))} placeholder="Informações adicionais..." />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>Protocolos <span className="text-muted" style={{ fontWeight: 400, fontSize: 12 }}>— selecione um ou mais</span></label>
+            <div style={{ border: '1px solid var(--border)', borderRadius: 6, maxHeight: 240, overflowY: 'auto', padding: '4px 0' }}>
+              {procedimentos.map(p => (
+                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', cursor: 'pointer', background: multiForm.protocolos.includes(p.id) ? '#f0f4ff' : 'transparent' }}>
+                  <input type="checkbox" checked={multiForm.protocolos.includes(p.id)} onChange={() => toggleProtocolo(p.id)} />
+                  <span style={{ fontSize: 14 }}>{p.nome}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          {multiError && <div className="error-msg">{multiError}</div>}
         </Modal>
       )}
 
