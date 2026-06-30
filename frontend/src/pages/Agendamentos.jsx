@@ -109,14 +109,17 @@ export default function Agendamentos() {
     if (editId) { executarSave(); return; }
     setSaving(true);
     try {
-      const { data: check } = await api.get(`/agendamentos/verificar-estoque?procedimento_id=${form.procedimento_id}&data=${form.data}`);
+      const resp = await api.get(`/agendamentos/verificar-estoque?procedimento_id=${form.procedimento_id}&data=${form.data}`);
       setSaving(false);
-      if (check.problemas.length > 0) {
-        setAvisoModal({ problemas: check.problemas, onConfirm: executarSave });
+      if (resp.data.problemas.length > 0) {
+        setAvisoModal({ problemas: resp.data.problemas, onConfirm: executarSave });
       } else {
         executarSave();
       }
-    } catch { setSaving(false); executarSave(); }
+    } catch (e) {
+      setSaving(false);
+      setFormError('Erro ao verificar estoque: ' + (e.response?.data?.error || e.message));
+    }
   }
 
   async function setStatus(ag, status) {
@@ -179,7 +182,10 @@ export default function Agendamentos() {
       } else {
         executarSaveMulti();
       }
-    } catch { setSavingMulti(false); executarSaveMulti(); }
+    } catch (e) {
+      setSavingMulti(false);
+      setMultiError('Erro ao verificar estoque: ' + (e.response?.data?.error || e.message));
+    }
   }
 
   async function handleImportFile(e) {
