@@ -41,6 +41,7 @@ router.post('/', async (req, res) => {
 router.get('/verificar-estoque', async (req, res) => {
   try {
     const { procedimento_id, data } = req.query;
+    console.log('[verificar-estoque] procedimento_id:', procedimento_id, '| data:', data);
     if (!procedimento_id || !data) return res.status(400).json({ error: 'procedimento_id e data são obrigatórios' });
 
     const { rows: receita } = await pool.query(`
