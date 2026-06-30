@@ -38,6 +38,49 @@ router.post('/', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+router.get('/verificar-estoque', async (req, res) => {
+  try {
+    const { procedimento_id, data } = req.query;
+    if (!procedimento_id || !data) return res.status(400).json({ error: 'procedimento_id e data são obrigatórios' });
+
+    const { rows: receita } = await pool.query(`
+      SELECT r.insumo_id, r.quantidade, i.nome, i.unidade_medida, i.estoque_fisico
+      FROM receita_procedimento r JOIN insumos i ON r.insumo_id = i.id
+      WHERE r.procedimento_id = $1
+    `, [procedimento_id]);
+
+    if (receita.length === 0) return res.json({ problemas: [] });
+
+    const problemas = [];
+    for (const item of receita) {
+      // Consumo previsto de agendamentos confirmados até esta data (exclusive o atual)
+      const { rows: prev } = await pool.query(`
+        SELECT COALESCE(SUM(rp.quantidade), 0) as total
+        FROM agendamentos a
+        JOIN receita_procedimento rp ON rp.procedimento_id = a.procedimento_id
+        WHERE a.status = 'Confirmado' AND a.data <= $1 AND rp.insumo_id = $2
+      `, [data, item.insumo_id]);
+
+      const consumoAntes = parseFloat(prev[0].total);
+      const saldoPrevisto = item.estoque_fisico - consumoAntes;
+      const saldoApos = saldoPrevisto - item.quantidade;
+
+      if (saldoApos < 0) {
+        problemas.push({
+          insumo: item.nome,
+          unidade: item.unidade_medida,
+          estoque_atual: item.estoque_fisico,
+          saldo_previsto: Math.round(saldoPrevisto * 1000) / 1000,
+          necessario: item.quantidade,
+          saldo_apos: Math.round(saldoApos * 1000) / 1000,
+        });
+      }
+    }
+
+    res.json({ problemas });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 router.post('/importar', upload.single('arquivo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });

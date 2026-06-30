@@ -66,6 +66,7 @@ export default function Agendamentos() {
   const [multiForm, setMultiForm] = useState(EMPTY_MULTI);
   const [multiError, setMultiError] = useState('');
   const [savingMulti, setSavingMulti] = useState(false);
+  const [avisoModal, setAvisoModal] = useState(null); // { problemas, onConfirm }
 
   const load = () => api.get('/agendamentos').then(r => setAgendamentos(r.data));
   const loadProcs = () => api.get('/procedimentos').then(r => setProcedimentos(r.data));
@@ -90,10 +91,7 @@ export default function Agendamentos() {
 
   function closeModal() { setModal(false); setEditId(null); setFormError(''); }
 
-  async function handleSave() {
-    if (!form.paciente_nome.trim() || !form.data || !form.procedimento_id) {
-      setFormError('Paciente, data e procedimento são obrigatórios.'); return;
-    }
+  async function executarSave() {
     setSaving(true); setFormError('');
     try {
       const payload = { ...form, procedimento_id: parseInt(form.procedimento_id) };
@@ -101,6 +99,24 @@ export default function Agendamentos() {
       closeModal(); load();
     } catch (e) { setFormError(e.response?.data?.error || 'Erro ao salvar.'); }
     finally { setSaving(false); }
+  }
+
+  async function handleSave() {
+    if (!form.paciente_nome.trim() || !form.data || !form.procedimento_id) {
+      setFormError('Paciente, data e procedimento são obrigatórios.'); return;
+    }
+    // Edição não verifica estoque
+    if (editId) { executarSave(); return; }
+    setSaving(true);
+    try {
+      const { data: check } = await api.get(`/agendamentos/verificar-estoque?procedimento_id=${form.procedimento_id}&data=${form.data}`);
+      setSaving(false);
+      if (check.problemas.length > 0) {
+        setAvisoModal({ problemas: check.problemas, onConfirm: executarSave });
+      } else {
+        executarSave();
+      }
+    } catch { setSaving(false); executarSave(); }
   }
 
   async function setStatus(ag, status) {
@@ -125,9 +141,7 @@ export default function Agendamentos() {
     }));
   }
 
-  async function handleSaveMulti() {
-    if (!multiForm.paciente_nome.trim() || !multiForm.data) { setMultiError('Paciente e data são obrigatórios.'); return; }
-    if (multiForm.protocolos.length === 0) { setMultiError('Selecione ao menos um protocolo.'); return; }
+  async function executarSaveMulti() {
     setSavingMulti(true); setMultiError('');
     try {
       for (const proc_id of multiForm.protocolos) {
@@ -145,6 +159,27 @@ export default function Agendamentos() {
       load();
     } catch (e) { setMultiError(e.response?.data?.error || 'Erro ao salvar.'); }
     finally { setSavingMulti(false); }
+  }
+
+  async function handleSaveMulti() {
+    if (!multiForm.paciente_nome.trim() || !multiForm.data) { setMultiError('Paciente e data são obrigatórios.'); return; }
+    if (multiForm.protocolos.length === 0) { setMultiError('Selecione ao menos um protocolo.'); return; }
+    setSavingMulti(true);
+    try {
+      const todosproblemas = [];
+      for (const proc_id of multiForm.protocolos) {
+        const { data: check } = await api.get(`/agendamentos/verificar-estoque?procedimento_id=${proc_id}&data=${multiForm.data}`);
+        for (const p of check.problemas) {
+          if (!todosproblemas.find(x => x.insumo === p.insumo)) todosproblemas.push(p);
+        }
+      }
+      setSavingMulti(false);
+      if (todosproblemas.length > 0) {
+        setAvisoModal({ problemas: todosproblemas, onConfirm: executarSaveMulti });
+      } else {
+        executarSaveMulti();
+      }
+    } catch { setSavingMulti(false); executarSaveMulti(); }
   }
 
   async function handleImportFile(e) {
@@ -297,6 +332,46 @@ export default function Agendamentos() {
             <textarea value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} placeholder="Informacoes adicionais..." />
           </div>
           {formError && <div className="error-msg">{formError}</div>}
+        </Modal>
+      )}
+
+      {/* Modal: aviso de estoque insuficiente */}
+      {avisoModal && (
+        <Modal title="Atenção — Estoque Insuficiente" onClose={() => setAvisoModal(null)}
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+              <button className="btn btn-ghost" onClick={() => setAvisoModal(null)}>Cancelar agendamento</button>
+              <button className="btn btn-danger" onClick={() => { setAvisoModal(null); avisoModal.onConfirm(); }}>
+                Estou ciente — confirmar mesmo assim
+              </button>
+            </div>
+          }>
+          <div style={{ background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 8, padding: '12px 16px', marginBottom: 16, fontSize: 14, color: '#c53030' }}>
+            <strong>Na data selecionada, os insumos abaixo estarão com saldo insuficiente para este protocolo.</strong>
+          </div>
+          <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                <th style={{ padding: '6px 8px', fontWeight: 600 }}>Insumo</th>
+                <th style={{ padding: '6px 8px', fontWeight: 600 }}>Saldo previsto</th>
+                <th style={{ padding: '6px 8px', fontWeight: 600 }}>Necessário</th>
+                <th style={{ padding: '6px 8px', fontWeight: 600 }}>Saldo após</th>
+              </tr>
+            </thead>
+            <tbody>
+              {avisoModal.problemas.map((p, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '8px 8px' }}><strong>{p.insumo}</strong></td>
+                  <td style={{ padding: '8px 8px', color: p.saldo_previsto <= 0 ? '#c53030' : '#d97706' }}>{p.saldo_previsto} {p.unidade}</td>
+                  <td style={{ padding: '8px 8px' }}>{p.necessario} {p.unidade}</td>
+                  <td style={{ padding: '8px 8px', color: '#c53030', fontWeight: 600 }}>{p.saldo_apos} {p.unidade}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 16 }}>
+            Ao confirmar, você declara estar ciente da indisponibilidade de estoque nesta data.
+          </p>
         </Modal>
       )}
 
